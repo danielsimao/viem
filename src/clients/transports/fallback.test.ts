@@ -845,6 +845,7 @@ test('https://github.com/wevm/viem/issues/2233', async () => {
     chain: localhost,
   })
 
+  // Bombard drpc with several requests to get rate-limited.
   await Promise.all(
     Array.from({ length: 2000 }).map(async (_, i) => {
       return await transport.request({
@@ -854,5 +855,6 @@ test('https://github.com/wevm/viem/issues/2233', async () => {
     }),
   )
 
+  // We will expect the HTTP fallback to be used.
   expect(fallbackCount > 0).toBeTruthy()
 })

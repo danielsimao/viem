@@ -18,6 +18,7 @@ import {
   rankTransports,
 } from './fallback.js'
 import { http } from './http.js'
+import { webSocket } from './webSocket.js'
 
 test('default', () => {
   const alchemy = http('https://alchemy.com/rpc')
@@ -828,4 +829,30 @@ describe('rankTransports', () => {
       ]
     `)
   })
+})
+
+test('https://github.com/wevm/viem/issues/2233', async () => {
+  let fallbackCount = 0
+  const httpServer = await createHttpServer((_req, res) => {
+    fallbackCount++
+    res.end()
+  })
+
+  const transport = fallback([
+    webSocket('wss://eth.drpc.org'),
+    http(httpServer.url),
+  ])({
+    chain: localhost,
+  })
+
+  await Promise.all(
+    Array.from({ length: 2000 }).map(async (_, i) => {
+      return await transport.request({
+        method: 'eth_getBlockByNumber',
+        params: [`0x${i.toString(16)}`, true],
+      })
+    }),
+  )
+
+  expect(fallbackCount > 0).toBeTruthy()
 })
